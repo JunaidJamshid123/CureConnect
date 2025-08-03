@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-const ScreenTwo = () => {
+const SchedulesScreen = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Screen Two</Text>
-      <Text style={styles.subtitle}>This is the second additional screen.</Text>
+      <Text style={styles.title}>Schedules Screen</Text>
+      <Text style={styles.subtitle}>Manage your appointments and schedules.</Text>
     </View>
   );
 };
@@ -28,4 +28,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ScreenTwo;
+export default SchedulesScreen;

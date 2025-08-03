@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-const ScreenOne = () => {
+const ProfileScreen = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Screen One</Text>
-      <Text style={styles.subtitle}>This is the first additional screen.</Text>
+      <Text style={styles.title}>Profile Screen</Text>
+      <Text style={styles.subtitle}>View and edit your personal profile.</Text>
     </View>
   );
 };
@@ -15,7 +15,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#E0F7FA',
+    backgroundColor: '#E8F5E9',
   },
   title: {
     fontSize: 24,
@@ -28,4 +28,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ScreenOne;
+export default ProfileScreen;
