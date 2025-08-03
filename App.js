@@ -1,20 +1,17 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect } from 'react';
+import SplashScreen from 'react-native-splash-screen';
+import AppNavigator from './src/navigation/BottomTabNavigator'; // Import the BottomTabNavigator
 
-export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
-}
+const App = () => {
+  useEffect(() => {
+    // Hide the splash screen after a short delay or when your app is ready
+    // For demonstration, we'll hide it after 2 seconds.
+    setTimeout(() => {
+      SplashScreen.hide();
+    }, 2000);
+  }, []);
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+  return <AppNavigator />;
+};
+
+export default App;
