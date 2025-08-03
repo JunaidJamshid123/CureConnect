@@ -1,15 +1,38 @@
-import React, { useEffect } from 'react';
-import SplashScreen from 'react-native-splash-screen';
-import AppNavigator from './src/navigation/BottomTabNavigator'; // Import the BottomTabNavigator
+import React, { useState, useEffect } from 'react';
+import * as SplashScreen from 'expo-splash-screen';
+import AppNavigator from './src/navigation/BottomTabNavigator';
+import CustomSplashScreen from './src/screens/SplashScreen'; // Import your custom splash screen
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 const App = () => {
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    // Hide the splash screen after a short delay or when your app is ready
-    // For demonstration, we'll hide it after 2 seconds.
-    setTimeout(() => {
-      SplashScreen.hide();
-    }, 2000);
+    async function prepare() {
+      try {
+        // You can add any initialization logic here
+        // For example: loading fonts, checking auth status, etc.
+        await new Promise(resolve => setTimeout(resolve, 100)); // Small delay
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        // Hide the native splash screen
+        await SplashScreen.hideAsync();
+      }
+    }
+
+    prepare();
   }, []);
+
+  const handleSplashFinish = () => {
+    setIsLoading(false);
+  };
+
+  if (isLoading) {
+    return <CustomSplashScreen onFinish={handleSplashFinish} />;
+  }
 
   return <AppNavigator />;
 };
