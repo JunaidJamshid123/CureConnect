@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-const ChatsScreen = () => {
+const AIChatBotScreen = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Doctor Chats Screen</Text>
-      <Text style={styles.subtitle}>Chat with patients.</Text>
+      <Text style={styles.title}>AI Chatbot Screen</Text>
+      <Text style={styles.subtitle}>This is where the AI assistant logic will go.</Text>
     </View>
   );
 };
@@ -15,7 +15,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F3E5F5',
+    backgroundColor: '#F0F8FF',
   },
   title: {
     fontSize: 24,
@@ -28,4 +28,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ChatsScreen;
+export default AIChatBotScreen;

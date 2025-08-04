@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
-import AppNavigator from './src/navigation/BottomTabNavigator';
-import CustomSplashScreen from './src/screens/SplashScreen'; // Import your custom splash screen
+import AppNavigator from './src/navigation/AppNavigator'; // Corrected import
+import CustomSplashScreen from './src/screens/SplashScreen';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
