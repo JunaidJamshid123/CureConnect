@@ -3,11 +3,11 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { View, Image } from 'react-native';
 
-import HomeScreen from '../screens/HomeScreen';
-import DoctorsScreen from '../screens/DoctorsScreen';
-import SchedulesScreen from '../screens/SchedulesScreen';
-import ChatsScreen from '../screens/ChatsScreen';
-import ProfileScreen from '../screens/ProfileScreen';
+import HomeScreen from '../screens/user/HomeScreen';
+import DoctorsScreen from '../screens/user/DoctorsScreen';
+import SchedulesScreen from '../screens/user/SchedulesScreen';
+import ChatsScreen from '../screens/user/ChatsScreen';
+import ProfileScreen from '../screens/user/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -16,17 +16,17 @@ const CustomIcon = ({ name, color, size, focused }) => {
   const getIconSource = () => {
     switch (name) {
       case 'Home':
-        return require('../../assets/home.png');
+        return require('../../assets/icons/home.png');
       case 'Doctors':
-        return require('../../assets/doctor.png');
+        return require('../../assets/icons/doctor.png');
       case 'Schedules':
-        return require('../../assets/calendar.png');
+        return require('../../assets/icons/calendar.png');
       case 'Chats':
-        return require('../../assets/chat.png');
+        return require('../../assets/icons/chat.png');
       case 'Profile':
-        return require('../../assets/profile.png');
+        return require('../../assets/icons/profile.png');
       default:
-        return require('../../assets/home.png');
+        return require('../../assets/icons/home.png');
     }
   };
 

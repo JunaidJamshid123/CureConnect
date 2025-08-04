@@ -182,7 +182,7 @@ const SplashScreen = ({ onFinish }) => {
           <View style={styles.logoBackground}>
             {/* Your actual icon */}
             <Image 
-              source={require('../../assets/stethoscope.png')} // Update path as needed
+              source={require('../../assets/icons/stethoscope.png')} // Update path as needed
               style={styles.logoIcon}
               resizeMode="contain"
             />
