@@ -9,7 +9,9 @@ import {
   Image,
   Alert,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
+import AuthService from '../../services/AuthService';
 
 const SignupScreen = ({ navigation }) => {
   const [formData, setFormData] = useState({
@@ -22,6 +24,7 @@ const SignupScreen = ({ navigation }) => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const updateFormData = (field, value) => {
     setFormData(prev => ({
@@ -74,29 +77,40 @@ const SignupScreen = ({ navigation }) => {
     return true;
   };
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     if (!validateForm()) {
       return;
     }
 
-    // Add your signup logic here
-    // For now, navigate based on selected role
-    Alert.alert(
-      'Success',
-      `Account created successfully as ${formData.role}!`,
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            if (formData.role === 'patient') {
-              navigation.replace('User');
-            } else {
-              navigation.replace('Doctor');
+    setIsLoading(true);
+
+    try {
+      // Call AuthService to create user
+      const result = await AuthService.signUp(formData);
+
+      if (result.success) {
+        Alert.alert(
+          'Success',
+          `Account created successfully as ${formData.role}!`,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                if (formData.role === 'patient') {
+                  navigation.replace('User');
+                } else {
+                  navigation.replace('Doctor');
+                }
+              }
             }
-          }
-        }
-      ]
-    );
+          ]
+        );
+      }
+    } catch (error) {
+      Alert.alert('Error', error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSocialSignup = (provider) => {
@@ -128,6 +142,7 @@ const SignupScreen = ({ navigation }) => {
                   formData.role === 'patient' && styles.roleButtonActive
                 ]}
                 onPress={() => updateFormData('role', 'patient')}
+                disabled={isLoading}
               >
                 <Text style={[
                   styles.roleButtonText,
@@ -142,6 +157,7 @@ const SignupScreen = ({ navigation }) => {
                   formData.role === 'doctor' && styles.roleButtonActive
                 ]}
                 onPress={() => updateFormData('role', 'doctor')}
+                disabled={isLoading}
               >
                 <Text style={[
                   styles.roleButtonText,
@@ -163,6 +179,7 @@ const SignupScreen = ({ navigation }) => {
               value={formData.fullName}
               onChangeText={(value) => updateFormData('fullName', value)}
               autoCapitalize="words"
+              editable={!isLoading}
             />
           </View>
 
@@ -177,6 +194,7 @@ const SignupScreen = ({ navigation }) => {
               onChangeText={(value) => updateFormData('email', value)}
               keyboardType="email-address"
               autoCapitalize="none"
+              editable={!isLoading}
             />
           </View>
 
@@ -190,6 +208,7 @@ const SignupScreen = ({ navigation }) => {
               value={formData.phone}
               onChangeText={(value) => updateFormData('phone', value)}
               keyboardType="phone-pad"
+              editable={!isLoading}
             />
           </View>
 
@@ -204,10 +223,12 @@ const SignupScreen = ({ navigation }) => {
                 value={formData.password}
                 onChangeText={(value) => updateFormData('password', value)}
                 secureTextEntry={!showPassword}
+                editable={!isLoading}
               />
               <TouchableOpacity
                 style={styles.eyeIcon}
                 onPress={() => setShowPassword(!showPassword)}
+                disabled={isLoading}
               >
                 <Text style={styles.eyeIconText}>
                   {showPassword ? '🙈' : '👁️'}
@@ -227,10 +248,12 @@ const SignupScreen = ({ navigation }) => {
                 value={formData.confirmPassword}
                 onChangeText={(value) => updateFormData('confirmPassword', value)}
                 secureTextEntry={!showConfirmPassword}
+                editable={!isLoading}
               />
               <TouchableOpacity
                 style={styles.eyeIcon}
                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                disabled={isLoading}
               >
                 <Text style={styles.eyeIconText}>
                   {showConfirmPassword ? '🙈' : '👁️'}
@@ -240,8 +263,19 @@ const SignupScreen = ({ navigation }) => {
           </View>
 
           {/* Sign Up Button */}
-          <TouchableOpacity style={styles.signUpButton} onPress={handleSignup}>
-            <Text style={styles.signUpButtonText}>Sign Up</Text>
+          <TouchableOpacity 
+            style={[styles.signUpButton, isLoading && styles.signUpButtonDisabled]} 
+            onPress={handleSignup}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color="#FFFFFF" />
+                <Text style={[styles.signUpButtonText, { marginLeft: 8 }]}>Creating Account...</Text>
+              </View>
+            ) : (
+              <Text style={styles.signUpButtonText}>Sign Up</Text>
+            )}
           </TouchableOpacity>
 
           {/* Divider */}
@@ -254,8 +288,9 @@ const SignupScreen = ({ navigation }) => {
           {/* Social Login Buttons */}
           <View style={styles.socialContainer}>
             <TouchableOpacity
-              style={styles.socialButton}
+              style={[styles.socialButton, isLoading && styles.socialButtonDisabled]}
               onPress={() => handleSocialSignup('Facebook')}
+              disabled={isLoading}
             >
               <Image
                 source={require('../../../assets/icons/facebook.png')}
@@ -264,8 +299,9 @@ const SignupScreen = ({ navigation }) => {
               />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.socialButton}
+              style={[styles.socialButton, isLoading && styles.socialButtonDisabled]}
               onPress={() => handleSocialSignup('Google')}
+              disabled={isLoading}
             >
               <Image
                 source={require('../../../assets/icons/google.png')}
@@ -274,8 +310,9 @@ const SignupScreen = ({ navigation }) => {
               />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.socialButton}
+              style={[styles.socialButton, isLoading && styles.socialButtonDisabled]}
               onPress={() => handleSocialSignup('Apple')}
+              disabled={isLoading}
             >
               <Image
                 source={require('../../../assets/icons/apple.png')}
@@ -288,8 +325,11 @@ const SignupScreen = ({ navigation }) => {
           {/* Sign In Link */}
           <View style={styles.signInContainer}>
             <Text style={styles.signInText}>Already have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.signInLink}>Sign in</Text>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('Login')}
+              disabled={isLoading}
+            >
+              <Text style={[styles.signInLink, isLoading && styles.linkDisabled]}>Sign in</Text>
             </TouchableOpacity>
           </View>
 
@@ -430,10 +470,18 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 30,
   },
+  signUpButtonDisabled: {
+    backgroundColor: '#A0A0A0',
+  },
   signUpButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dividerContainer: {
     flexDirection: 'row',
@@ -466,6 +514,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E9ECEF',
   },
+  socialButtonDisabled: {
+    opacity: 0.6,
+  },
   socialIcon: {
     width: 24,
     height: 24,
@@ -484,6 +535,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#0BAB7D',
     fontWeight: '600',
+  },
+  linkDisabled: {
+    opacity: 0.6,
   },
   termsContainer: {
     paddingHorizontal: 10,
