@@ -9,39 +9,95 @@ import {
   Image,
   Alert,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
+import AuthService from '../../services/AuthService';
 
 const LoginScreen = ({ navigation }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [selectedRole, setSelectedRole] = useState('patient'); // Default to patient
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = () => {
-    // Basic validation
+  const updateFormData = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const validateForm = () => {
+    const { email, password } = formData;
+
+    // Check if all fields are filled
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
-      return;
+      return false;
     }
 
-    // Email validation
+    // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       Alert.alert('Error', 'Please enter a valid email address');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleLogin = async () => {
+    if (!validateForm()) {
       return;
     }
 
-    // Add your authentication logic here
-    // For now, navigate based on selected role
-    if (selectedRole === 'patient') {
-      navigation.replace('User');
-    } else {
-      navigation.replace('Doctor');
+    setIsLoading(true);
+
+    try {
+      // Call AuthService to sign in user
+      const result = await AuthService.signIn(formData.email, formData.password);
+
+      if (result.success) {
+        Alert.alert(
+          'Success',
+          `Welcome back! Signing in as ${result.role}`,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Navigate based on user role
+                if (result.role === 'patient') {
+                  navigation.replace('User');
+                } else if (result.role === 'doctor') {
+                  navigation.replace('Doctor');
+                } else {
+                  Alert.alert('Error', 'Invalid user role detected');
+                }
+              }
+            }
+          ]
+        );
+      }
+    } catch (error) {
+      Alert.alert('Login Failed', error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSocialLogin = (provider) => {
     Alert.alert('Social Login', `${provider} login will be implemented`);
+  };
+
+  const handleForgotPassword = () => {
+    if (!formData.email) {
+      Alert.alert('Email Required', 'Please enter your email address first');
+      return;
+    }
+    
+    // TODO: Implement password reset functionality
+    Alert.alert('Password Reset', 'Password reset functionality will be implemented');
   };
 
   return (
@@ -52,59 +108,25 @@ const LoginScreen = ({ navigation }) => {
           <View style={styles.curvedHeader}>
             <Text style={styles.headerTitle}>Sign In</Text>
             <Text style={styles.headerSubtitle}>
-              Welcome to CureConnect, your all-in-one healthcare companion!
+              Welcome back to CureConnect, your trusted healthcare companion!
             </Text>
           </View>
         </View>
 
         {/* Form Container */}
         <View style={styles.formContainer}>
-          {/* Role Selection */}
-          <View style={styles.roleContainer}>
-            <Text style={styles.roleLabel}>Select Role</Text>
-            <View style={styles.roleButtons}>
-              <TouchableOpacity
-                style={[
-                  styles.roleButton,
-                  selectedRole === 'patient' && styles.roleButtonActive
-                ]}
-                onPress={() => setSelectedRole('patient')}
-              >
-                <Text style={[
-                  styles.roleButtonText,
-                  selectedRole === 'patient' && styles.roleButtonTextActive
-                ]}>
-                  🧑‍💼 Patient
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.roleButton,
-                  selectedRole === 'doctor' && styles.roleButtonActive
-                ]}
-                onPress={() => setSelectedRole('doctor')}
-              >
-                <Text style={[
-                  styles.roleButtonText,
-                  selectedRole === 'doctor' && styles.roleButtonTextActive
-                ]}>
-                  👨‍⚕️ Doctor
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
           {/* Email Input */}
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Email</Text>
             <TextInput
               style={styles.textInput}
-              placeholder="hello.healthhub@gmail.com"
+              placeholder="Enter your email"
               placeholderTextColor="#A0A0A0"
-              value={email}
-              onChangeText={setEmail}
+              value={formData.email}
+              onChangeText={(value) => updateFormData('email', value)}
               keyboardType="email-address"
               autoCapitalize="none"
+              editable={!isLoading}
             />
           </View>
 
@@ -114,29 +136,48 @@ const LoginScreen = ({ navigation }) => {
             <View style={styles.passwordContainer}>
               <TextInput
                 style={styles.passwordInput}
-                placeholder="••••••••"
+                placeholder="Enter your password"
                 placeholderTextColor="#A0A0A0"
-                value={password}
-                onChangeText={setPassword}
+                value={formData.password}
+                onChangeText={(value) => updateFormData('password', value)}
                 secureTextEntry={!showPassword}
+                editable={!isLoading}
               />
               <TouchableOpacity
                 style={styles.eyeIcon}
                 onPress={() => setShowPassword(!showPassword)}
+                disabled={isLoading}
               >
                 <Text style={styles.eyeIconText}>
                   {showPassword ? '🙈' : '👁️'}
                 </Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.forgotPassword}>
-              <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+            <TouchableOpacity 
+              style={styles.forgotPassword} 
+              onPress={handleForgotPassword}
+              disabled={isLoading}
+            >
+              <Text style={[styles.forgotPasswordText, isLoading && styles.linkDisabled]}>
+                Forgot password?
+              </Text>
             </TouchableOpacity>
           </View>
 
           {/* Sign In Button */}
-          <TouchableOpacity style={styles.signInButton} onPress={handleLogin}>
-            <Text style={styles.signInButtonText}>Sign In</Text>
+          <TouchableOpacity 
+            style={[styles.signInButton, isLoading && styles.signInButtonDisabled]} 
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color="#FFFFFF" />
+                <Text style={[styles.signInButtonText, { marginLeft: 8 }]}>Signing In...</Text>
+              </View>
+            ) : (
+              <Text style={styles.signInButtonText}>Sign In</Text>
+            )}
           </TouchableOpacity>
 
           {/* Divider */}
@@ -149,8 +190,9 @@ const LoginScreen = ({ navigation }) => {
           {/* Social Login Buttons */}
           <View style={styles.socialContainer}>
             <TouchableOpacity
-              style={styles.socialButton}
+              style={[styles.socialButton, isLoading && styles.socialButtonDisabled]}
               onPress={() => handleSocialLogin('Facebook')}
+              disabled={isLoading}
             >
               <Image
                 source={require('../../../assets/icons/facebook.png')}
@@ -159,8 +201,9 @@ const LoginScreen = ({ navigation }) => {
               />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.socialButton}
+              style={[styles.socialButton, isLoading && styles.socialButtonDisabled]}
               onPress={() => handleSocialLogin('Google')}
+              disabled={isLoading}
             >
               <Image
                 source={require('../../../assets/icons/google.png')}
@@ -169,8 +212,9 @@ const LoginScreen = ({ navigation }) => {
               />
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.socialButton}
+              style={[styles.socialButton, isLoading && styles.socialButtonDisabled]}
               onPress={() => handleSocialLogin('Apple')}
+              disabled={isLoading}
             >
               <Image
                 source={require('../../../assets/icons/apple.png')}
@@ -183,9 +227,21 @@ const LoginScreen = ({ navigation }) => {
           {/* Sign Up Link */}
           <View style={styles.signUpContainer}>
             <Text style={styles.signUpText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-              <Text style={styles.signUpLink}>Sign up</Text>
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('Signup')}
+              disabled={isLoading}
+            >
+              <Text style={[styles.signUpLink, isLoading && styles.linkDisabled]}>
+                Sign up
+              </Text>
             </TouchableOpacity>
+          </View>
+
+          {/* Demo Accounts Info */}
+          <View style={styles.demoContainer}>
+            <Text style={styles.demoTitle}>Demo Accounts:</Text>
+            <Text style={styles.demoText}>Patient: patient@test.com | password123</Text>
+            <Text style={styles.demoText}>Doctor: doctor@test.com | password123</Text>
           </View>
         </View>
       </ScrollView>
@@ -200,6 +256,7 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
+    paddingBottom: 20,
   },
   headerContainer: {
     height: 200,
@@ -230,41 +287,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 30,
-  },
-  roleContainer: {
-    marginBottom: 20,
-  },
-  roleLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333333',
-    marginBottom: 12,
-  },
-  roleButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  roleButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#E0E0E0',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-  },
-  roleButtonActive: {
-    borderColor: '#0BAB7D',
-    backgroundColor: '#F0FDF4',
-  },
-  roleButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666666',
-  },
-  roleButtonTextActive: {
-    color: '#0BAB7D',
   },
   inputContainer: {
     marginBottom: 20,
@@ -323,10 +345,18 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 30,
   },
+  signInButtonDisabled: {
+    backgroundColor: '#A0A0A0',
+  },
   signInButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dividerContainer: {
     flexDirection: 'row',
@@ -359,6 +389,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E9ECEF',
   },
+  socialButtonDisabled: {
+    opacity: 0.6,
+  },
   socialIcon: {
     width: 24,
     height: 24,
@@ -367,7 +400,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: 20,
+    marginBottom: 20,
   },
   signUpText: {
     fontSize: 16,
@@ -377,6 +410,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#0BAB7D',
     fontWeight: '600',
+  },
+  linkDisabled: {
+    opacity: 0.6,
+  },
+  demoContainer: {
+    backgroundColor: '#F8F9FA',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+    marginBottom: 10,
+  },
+  demoTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333333',
+    marginBottom: 8,
+  },
+  demoText: {
+    fontSize: 12,
+    color: '#666666',
+    marginBottom: 2,
   },
 });
 
