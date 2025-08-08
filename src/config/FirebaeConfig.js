@@ -1,23 +1,31 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { initializeAuth } from "@react-native-firebase/auth";
-import { getFirestore } from "firebase/firestore";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+// config/FirebaseConfig.js
+import { initializeApp } from 'firebase/app';
+import {
+  getReactNativePersistence,
+  initializeAuth,
+} from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyCQ3UvYzpf13nQu64TUnlOlEuUk_jrOOXs",
   authDomain: "cureconnect-e3cd4.firebaseapp.com",
   projectId: "cureconnect-e3cd4",
-  storageBucket: "cureconnect-e3cd4.firebasestorage.app",
+  storageBucket: "cureconnect-e3cd4.appspot.com", // ✅ fixed this too
   messagingSenderId: "398963194474",
   appId: "1:398963194474:web:e393be2080be1f4671a813",
   measurementId: "G-Y3JBWCBD36"
 };
 
-// Initialize Firebase
+// ✅ Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const auth = initializeAuth(app);
+
+// ✅ Initialize Auth with AsyncStorage for React Native
+const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage)
+});
+
+// ✅ Firestore
 const db = getFirestore(app);
+
+export { auth, db };

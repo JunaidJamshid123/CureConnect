@@ -1,7 +1,8 @@
 // services/AuthService.js
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../config/FirebaeConfig';
+import { auth, db } from '../config/FirebaeConfig'; // ✅ correct
+
 
 class AuthService {
   // Generate unique ID for doctor/patient
