@@ -3,7 +3,6 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } f
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../config/FirebaeConfig'; // ✅ correct
 
-
 class AuthService {
   // Generate unique ID for doctor/patient
   generateUniqueId = (role) => {
@@ -13,54 +12,110 @@ class AuthService {
     return `${prefix}${timestamp}${random}`;
   };
 
-  // Create doctor document structure
+  // Create doctor document structure - Updated to match your requirements
   createDoctorDocument = (userData, userId) => {
     return {
+      // Basic Information
       fullName: userData.fullName,
       email: userData.email,
       phone: userData.phone,
-      specialization: null,
       gender: null,
+      address: null,
+      profileImage: null, // Cloudinary URL will be stored here
+      
+      // Professional Information
+      specialization: null,
       experience: null,
       education: null,
-      availability: [],
-      address: null,
-      createdAt: new Date(),
       licenseNumber: null,
-      profileImage: null,
-      ratings: 0,
+      languagesSpoken: [], // Array of languages
+      
+      // Practice Information
+      consultationFee: null, // String/Number for fee amount
       isAvailable: true,
-      consultationFee: null,
-      languagesSpoken: [],
+      availability: {
+        weekdays: null,    // e.g., "9:00 AM - 6:00 PM"
+        saturday: null,    // e.g., "10:00 AM - 2:00 PM"
+        sunday: null       // e.g., "Closed"
+      },
+      
+      // Rating and Reviews
+      ratings: 0,
+      totalReviews: 0,
+      
+      // System Fields
       doctorId: this.generateUniqueId('doctor'),
       userId: userId, // Link to Firebase Auth user
-      role: 'doctor'
+      role: 'doctor',
+      createdAt: new Date(),
+      lastUpdated: new Date(),
+      isActive: true,
+      profileComplete: false,
+      
+      // Additional Medical Fields
+      medicalRegistrationNumber: null,
+      hospitalAffiliation: null,
+      clinicAddress: null,
+      emergencyContact: null,
+      about: null, // Doctor's bio/description
+      
+      // Settings
+      notificationSettings: {
+        emailNotifications: true,
+        pushNotifications: true,
+        smsNotifications: false
+      },
+      privacySettings: {
+        profileVisibility: 'public',
+        contactInfoVisible: true,
+        showRatings: true
+      }
     };
   };
 
-  // Create patient document structure
+  // Create patient document structure - Enhanced
   createPatientDocument = (userData, userId) => {
     return {
+      // Basic Information
       fullName: userData.fullName,
       email: userData.email,
       phone: userData.phone,
       gender: null,
       age: null,
+      address: null,
+      profileImage: null, // Cloudinary URL will be stored here
+      
+      // Medical Information
       height: null,
       weight: null,
       bloodGroup: null,
-      chronicDiseases: [],
-      medications: [],
-      allergies: [],
-      createdAt: new Date(),
-      address: null,
-      emergencyContact: null,
+      chronicDiseases: [], // Array of chronic conditions
+      currentMedications: [], // Array of current medications
+      allergies: [], // Array of allergies
       medicalHistory: null,
       insuranceProvider: null,
+      emergencyContact: {
+        name: null,
+        relationship: null,
+        phone: null
+      },
+      
+      // System Fields
       patientId: this.generateUniqueId('patient'),
-      profileImage: null,
       userId: userId, // Link to Firebase Auth user
-      role: 'patient'
+      role: 'patient',
+      createdAt: new Date(),
+      lastUpdated: new Date(),
+      isActive: true,
+      profileComplete: false,
+      
+      // Preferences
+      preferredLanguage: 'English',
+      notificationSettings: {
+        appointmentReminders: true,
+        healthTips: true,
+        promotions: false
+      }
     };
   };
 
@@ -94,15 +149,19 @@ class AuthService {
       // Also create a general users document for role identification
       await setDoc(doc(db, 'users', user.uid), {
         email: userData.email,
+        fullName: userData.fullName,
         role: userData.role,
         createdAt: new Date(),
-        isActive: true
+        lastLoginAt: new Date(),
+        isActive: true,
+        profileSetup: false // Track if initial profile setup is complete
       });
       
       return {
         success: true,
         user: user,
-        userData: documentData
+        userData: documentData,
+        message: 'Account created successfully'
       };
       
     } catch (error) {
@@ -111,7 +170,7 @@ class AuthService {
     }
   };
 
-  // Sign in user
+  // Sign in user - Enhanced with profile data
   signIn = async (email, password) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -125,10 +184,18 @@ class AuthService {
       
       const userData = userDoc.data();
       
+      // Update last login time
+      await this.updateLastLogin(user.uid);
+      
+      // Get complete profile data
+      const profileData = await this.getUserProfile(user.uid, userData.role);
+      
       return {
         success: true,
         user: user,
-        role: userData.role
+        role: userData.role,
+        profileData: profileData.data,
+        message: 'Login successful'
       };
       
     } catch (error) {
@@ -137,11 +204,27 @@ class AuthService {
     }
   };
 
+  // Update last login timestamp
+  updateLastLogin = async (userId) => {
+    try {
+      const userRef = doc(db, 'users', userId);
+      await updateDoc(userRef, {
+        lastLoginAt: new Date()
+      });
+    } catch (error) {
+      console.error('Update last login error:', error);
+      // Don't throw error as this is not critical
+    }
+  };
+
   // Sign out user
   signOut = async () => {
     try {
       await signOut(auth);
-      return { success: true };
+      return { 
+        success: true,
+        message: 'Logged out successfully'
+      };
     } catch (error) {
       console.error('Signout error:', error);
       throw new Error('Failed to sign out');
@@ -169,6 +252,120 @@ class AuthService {
     }
   };
 
+  // Get current user info
+  getCurrentUser = () => {
+    return auth.currentUser;
+  };
+
+  // Check if user is authenticated
+  isAuthenticated = () => {
+    return !!auth.currentUser;
+  };
+
+  // Get current user role
+  getCurrentUserRole = async () => {
+    try {
+      const user = this.getCurrentUser();
+      if (!user) {
+        throw new Error('No authenticated user');
+      }
+      
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (!userDoc.exists()) {
+        throw new Error('User data not found');
+      }
+      
+      return userDoc.data().role;
+    } catch (error) {
+      console.error('Get user role error:', error);
+      throw new Error('Failed to get user role');
+    }
+  };
+
+  // Reset password
+  resetPassword = async (email) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      return {
+        success: true,
+        message: 'Password reset email sent successfully'
+      };
+    } catch (error) {
+      console.error('Reset password error:', error);
+      throw new Error(this.getErrorMessage(error.code));
+    }
+  };
+
+  // Update user email
+  updateUserEmail = async (newEmail) => {
+    try {
+      const user = this.getCurrentUser();
+      if (!user) {
+        throw new Error('No authenticated user');
+      }
+      
+      await updateEmail(user, newEmail);
+      
+      // Update email in user document
+      await updateDoc(doc(db, 'users', user.uid), {
+        email: newEmail,
+        lastUpdated: new Date()
+      });
+      
+      // Update email in profile document
+      const role = await this.getCurrentUserRole();
+      const collectionName = role === 'doctor' ? 'doctors' : 'patients';
+      await updateDoc(doc(db, collectionName, user.uid), {
+        email: newEmail,
+        lastUpdated: new Date()
+      });
+      
+      return {
+        success: true,
+        message: 'Email updated successfully'
+      };
+    } catch (error) {
+      console.error('Update email error:', error);
+      throw new Error(this.getErrorMessage(error.code));
+    }
+  };
+
+  // Delete user account
+  deleteAccount = async () => {
+    try {
+      const user = this.getCurrentUser();
+      if (!user) {
+        throw new Error('No authenticated user');
+      }
+      
+      const userId = user.uid;
+      const role = await this.getCurrentUserRole();
+      
+      // Mark user as inactive instead of deleting (for data integrity)
+      await updateDoc(doc(db, 'users', userId), {
+        isActive: false,
+        deletedAt: new Date()
+      });
+      
+      const collectionName = role === 'doctor' ? 'doctors' : 'patients';
+      await updateDoc(doc(db, collectionName, userId), {
+        isActive: false,
+        deletedAt: new Date()
+      });
+      
+      // Sign out user
+      await signOut(auth);
+      
+      return {
+        success: true,
+        message: 'Account deleted successfully'
+      };
+    } catch (error) {
+      console.error('Delete account error:', error);
+      throw new Error('Failed to delete account');
+    }
+  };
+
   // Helper function to get user-friendly error messages
   getErrorMessage = (errorCode) => {
     switch (errorCode) {
@@ -186,9 +383,31 @@ class AuthService {
         return 'Too many failed attempts. Please try again later.';
       case 'auth/network-request-failed':
         return 'Network error. Please check your internet connection.';
+      case 'auth/requires-recent-login':
+        return 'This action requires recent authentication. Please log in again.';
+      case 'auth/invalid-credential':
+        return 'Invalid login credentials. Please check your email and password.';
       default:
         return 'An error occurred. Please try again.';
     }
+  };
+
+  // Validate email format
+  validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Validate password strength
+  validatePassword = (password) => {
+    return {
+      isValid: password.length >= 6,
+      hasMinLength: password.length >= 6,
+      hasUpperCase: /[A-Z]/.test(password),
+      hasLowerCase: /[a-z]/.test(password),
+      hasNumbers: /\d/.test(password),
+      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    };
   };
 }
 
