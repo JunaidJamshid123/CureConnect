@@ -6,7 +6,7 @@ import HomeScreen from '../screens/doctor/HomeScreen';
 import PatientsScreen from '../screens/doctor/PatientsScreen';
 import SchedulesScreen from '../screens/doctor/SchedulesScreen';
 import ChatsScreen from '../screens/doctor/ChatsScreen';
-import ProfileScreen from '../screens/doctor/ProfileScreen';
+import ProfileScreen from '../screens/doctor/Profile/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 

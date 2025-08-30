@@ -3,7 +3,7 @@ import { Alert } from 'react-native';
 import DoctorProfileService from '../../../services/DoctorProfileService';
 import AuthService from '../../../services/AuthService';
 
-export const useProfileLogic = () => {
+export const useProfileLogic = (navigation) => {
   // State management
   const [doctorProfile, setDoctorProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -201,6 +201,22 @@ export const useProfileLogic = () => {
     }
   };
 
+  // Handle profile picture removal
+  const handleRemoveProfilePicture = async () => {
+    try {
+      setUpdating(true);
+      const result = await DoctorProfileService.removeProfilePicture();
+      if (result.success) {
+        showSuccess(result.message);
+        setImagePickerModal(false);
+      }
+    } catch (error) {
+      showError('Failed to remove profile picture');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   // Handle logout
   const handleLogout = () => {
     Alert.alert(
@@ -214,9 +230,15 @@ export const useProfileLogic = () => {
           onPress: async () => {
             try {
               await AuthService.signOut();
-              // Navigation logic here
-              // navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+              // Navigate to auth stack and reset navigation stack
+              if (navigation) {
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'Auth' }]
+                });
+              }
             } catch (error) {
+              console.error('Logout error:', error);
               showError('Failed to logout');
             }
           }
@@ -242,6 +264,97 @@ export const useProfileLogic = () => {
     return Math.round((completedFields.length / requiredFields.length) * 100);
   };
 
+  // Get profile completion suggestions
+  const getProfileCompletionSuggestions = () => {
+    if (!doctorProfile) return [];
+    
+    const requiredFields = [
+      { field: 'fullName', label: 'Full Name', priority: 'high' },
+      { field: 'email', label: 'Email', priority: 'high' },
+      { field: 'phone', label: 'Phone Number', priority: 'high' },
+      { field: 'specialization', label: 'Specialization', priority: 'high' },
+      { field: 'gender', label: 'Gender', priority: 'medium' },
+      { field: 'experience', label: 'Years of Experience', priority: 'medium' },
+      { field: 'education', label: 'Education', priority: 'medium' },
+      { field: 'licenseNumber', label: 'License Number', priority: 'high' },
+      { field: 'consultationFee', label: 'Consultation Fee', priority: 'medium' }
+    ];
+    
+    return requiredFields
+      .filter(field => {
+        const value = doctorProfile[field.field];
+        return !value || value === '' || value === null;
+      })
+      .sort((a, b) => {
+        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        return priorityOrder[b.priority] - priorityOrder[a.priority];
+      });
+  };
+
+  // Close edit modal
+  const closeEditModal = () => {
+    setEditModal({ 
+      visible: false, 
+      field: '', 
+      value: '', 
+      title: '', 
+      multiline: false, 
+      keyboardType: 'default' 
+    });
+  };
+
+  // Update edit modal value
+  const updateEditModalValue = (value) => {
+    setEditModal(prev => ({ ...prev, value }));
+  };
+
+  // Close image picker modal
+  const closeImagePickerModal = () => {
+    setImagePickerModal(false);
+  };
+
+  // Validate profile data before saving
+  const validateProfileData = (field, value) => {
+    switch (field) {
+      case 'email':
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(value) ? null : 'Please enter a valid email address';
+      
+      case 'phone':
+        const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+        return phoneRegex.test(value.replace(/\s/g, '')) ? null : 'Please enter a valid phone number';
+      
+      case 'consultationFee':
+        const fee = parseFloat(value);
+        return !isNaN(fee) && fee >= 0 ? null : 'Please enter a valid consultation fee';
+      
+      case 'experience':
+        const exp = parseInt(value);
+        return !isNaN(exp) && exp >= 0 && exp <= 50 ? null : 'Experience should be between 0 and 50 years';
+      
+      default:
+        return null;
+    }
+  };
+
+  // Enhanced save edit with validation
+  const handleSaveEditWithValidation = async () => {
+    if (!editModal.value.trim()) {
+      showError('Please enter a valid value');
+      return;
+    }
+
+    // Validate the input
+    const validationError = validateProfileData(editModal.field, editModal.value.trim());
+    if (validationError) {
+      showError(validationError);
+      return;
+    }
+
+    // Proceed with saving
+    await handleSaveEdit();
+  };
+
   return {
     // State
     doctorProfile,
@@ -264,7 +377,14 @@ export const useProfileLogic = () => {
     handleSaveEdit,
     toggleAvailability,
     handleProfilePictureUpdate,
+    handleRemoveProfilePicture,
     handleLogout,
-    getProfileCompletion
+    getProfileCompletion,
+    getProfileCompletionSuggestions,
+    closeEditModal,
+    closeImagePickerModal,
+    updateEditModalValue,
+    validateProfileData,
+    handleSaveEditWithValidation
   };
 };

@@ -1,14 +1,39 @@
 // services/DoctorProfileService.js
-import { doc, updateDoc, getDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { updateDoc } from 'firebase/firestore';
 import { auth, db } from '../config/FirebaeConfig';
 import * as ImagePicker from 'expo-image-picker';
 
+// Debug imports
+console.log('Firebase imports check:', { doc, updateDoc, getDoc, onSnapshot });
+console.log('ImagePicker check:', ImagePicker);
+
 class DoctorProfileService {
+  constructor() {
+    // Debug imports on service initialization
+    console.log('DoctorProfileService initialized');
+    console.log('Firebase imports available:', { doc, updateDoc, getDoc, onSnapshot });
+    console.log('ImagePicker available:', ImagePicker);
+    console.log('ImagePicker methods:', Object.keys(ImagePicker));
+  }
+  
   // Cloudinary configuration - Replace with your actual credentials
   CLOUDINARY_CONFIG = {
     cloudName: 'db7pfhkag', // Replace with your Cloudinary cloud name
     uploadPreset: 'doctor_profiles', // Replace with your unsigned upload preset
     apiKey: '274134618364264', // Replace with your API key
+  };
+
+  // Validate Cloudinary configuration
+  validateCloudinaryConfig = () => {
+    if (!this.CLOUDINARY_CONFIG.cloudName || !this.CLOUDINARY_CONFIG.uploadPreset) {
+      throw new Error('Invalid Cloudinary configuration. Please check cloudName and uploadPreset.');
+    }
+    
+    console.log('Cloudinary config validated:', {
+      cloudName: this.CLOUDINARY_CONFIG.cloudName,
+      uploadPreset: this.CLOUDINARY_CONFIG.uploadPreset
+    });
   };
 
   // Get current authenticated doctor ID
@@ -23,6 +48,9 @@ class DoctorProfileService {
   // Get doctor profile data
   getDoctorProfile = async () => {
     try {
+      console.log('Firebase imports check:', { doc, getDoc, updateDoc, onSnapshot });
+      console.log('Firebase config check:', { auth, db });
+      
       const doctorId = this.getCurrentDoctorId();
       const doctorRef = doc(db, 'doctors', doctorId);
       const doctorDoc = await getDoc(doctorRef);
@@ -84,7 +112,15 @@ class DoctorProfileService {
         lastUpdated: new Date()
       };
 
-      await updateDoc(doctorRef, dataToUpdate);
+      // Try to use updateDoc, fallback to setDoc if needed
+      try {
+        await updateDoc(doctorRef, dataToUpdate);
+      } catch (updateError) {
+        console.warn('updateDoc failed, trying alternative method:', updateError);
+        // Fallback: import and use setDoc with merge option
+        const { setDoc } = await import('firebase/firestore');
+        await setDoc(doctorRef, dataToUpdate, { merge: true });
+      }
 
       return {
         success: true,
@@ -127,6 +163,9 @@ class DoctorProfileService {
   // Upload image to Cloudinary
   uploadImageToCloudinary = async (imageUri) => {
     try {
+      // Validate configuration first
+      this.validateCloudinaryConfig();
+      
       // Create form data for Cloudinary upload
       const formData = new FormData();
       formData.append('file', {
@@ -135,11 +174,21 @@ class DoctorProfileService {
         name: `doctor_profile_${Date.now()}.jpg`,
       });
       formData.append('upload_preset', this.CLOUDINARY_CONFIG.uploadPreset);
-      formData.append('cloud_name', this.CLOUDINARY_CONFIG.cloudName);
       
-      // Optional: Add transformation parameters
-      formData.append('transformation', 'c_fill,w_400,h_400,q_auto,f_auto');
+      // For unsigned uploads, only these parameters are allowed:
+      // upload_preset, callback, public_id, folder, asset_folder, tags, 
+      // context, metadata, face_coordinates, custom_coordinates, source, 
+      // filename_override, manifest_transformation, manifest_json, template, 
+      // template_vars, regions, public_id_prefix
+      
+      // Add folder for better organization
+      formData.append('folder', 'doctor_profiles');
+      
+      // Add tags for easier management
+      formData.append('tags', 'profile,doctor');
 
+      console.log('Uploading to Cloudinary with preset:', this.CLOUDINARY_CONFIG.uploadPreset);
+      
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/${this.CLOUDINARY_CONFIG.cloudName}/image/upload`,
         {
@@ -151,15 +200,20 @@ class DoctorProfileService {
         }
       );
 
+      console.log('Cloudinary response status:', response.status);
+
       const result = await response.json();
 
       if (response.ok && result.secure_url) {
+        // If you need transformations, you can apply them to the URL after upload
+        // For now, we'll return the original URL
         return {
           success: true,
           url: result.secure_url,
           publicId: result.public_id
         };
       } else {
+        console.error('Cloudinary response error:', result);
         throw new Error(result.error?.message || 'Failed to upload image');
       }
     } catch (error) {
@@ -171,6 +225,9 @@ class DoctorProfileService {
   // Pick image from device
   pickImage = async (options = {}) => {
     try {
+      console.log('ImagePicker check:', ImagePicker);
+      console.log('ImagePicker methods:', Object.keys(ImagePicker));
+      
       // Request permissions
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
@@ -178,12 +235,18 @@ class DoctorProfileService {
       }
 
       const defaultOptions = {
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1], // Square aspect ratio for profile pictures
         quality: 0.8,
         exif: false,
       };
+      
+      // Try to add mediaTypes if available
+      if (ImagePicker.MediaTypeOptions) {
+        defaultOptions.mediaTypes = ImagePicker.MediaTypeOptions.Images;
+      } else if (ImagePicker.MediaType) {
+        defaultOptions.mediaTypes = ImagePicker.MediaType.Images;
+      }
 
       const result = await ImagePicker.launchImageLibraryAsync({
         ...defaultOptions,
@@ -433,6 +496,70 @@ class DoctorProfileService {
       throw new Error('Failed to remove profile picture');
     }
   };
+
+  // Apply transformations to Cloudinary URL (post-upload)
+  applyImageTransformations = (originalUrl, transformations = {}) => {
+    try {
+      if (!originalUrl || !originalUrl.includes('cloudinary.com')) {
+        return originalUrl;
+      }
+
+      // Default transformations for profile pictures
+      const defaultTransformations = {
+        width: 400,
+        height: 400,
+        crop: 'fill',
+        quality: 'auto',
+        format: 'auto'
+      };
+
+      const finalTransformations = { ...defaultTransformations, ...transformations };
+      
+      // Build transformation string
+      const transformationString = Object.entries(finalTransformations)
+        .map(([key, value]) => `${key}_${value}`)
+        .join(',');
+
+      // Insert transformations into the URL
+      const urlParts = originalUrl.split('/');
+      const uploadIndex = urlParts.findIndex(part => part === 'upload');
+      
+      if (uploadIndex !== -1) {
+        urlParts.splice(uploadIndex + 1, 0, transformationString);
+        return urlParts.join('/');
+      }
+
+      return originalUrl;
+    } catch (error) {
+      console.error('Apply transformations error:', error);
+      return originalUrl;
+    }
+  };
+
+  // Get optimized profile image URL with transformations
+  getOptimizedProfileImageUrl = (originalUrl, size = 400) => {
+    return this.applyImageTransformations(originalUrl, {
+      width: size,
+      height: size,
+      crop: 'fill',
+      quality: 'auto'
+    });
+  };
 }
 
-export default new DoctorProfileService();
+// Create service instance with error handling
+let serviceInstance;
+try {
+  serviceInstance = new DoctorProfileService();
+  console.log('DoctorProfileService created successfully');
+} catch (error) {
+  console.error('Error creating DoctorProfileService:', error);
+  // Create a minimal service instance
+  serviceInstance = {
+    getDoctorProfile: async () => ({ success: false, error: 'Service initialization failed' }),
+    updateDoctorProfile: async () => ({ success: false, error: 'Service initialization failed' }),
+    // Add other methods as needed
+  };
+}
+
+export default serviceInstance;

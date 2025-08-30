@@ -8,13 +8,13 @@ import { getFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCQ3UvYzpf13nQu64TUnlOlEuUk_jrOOXs",
-  authDomain: "cureconnect-e3cd4.firebaseapp.com",
-  projectId: "cureconnect-e3cd4",
-  storageBucket: "cureconnect-e3cd4.appspot.com", // ✅ fixed this too
-  messagingSenderId: "398963194474",
-  appId: "1:398963194474:web:e393be2080be1f4671a813",
-  measurementId: "G-Y3JBWCBD36"
+  apiKey: "AIzaSyC1hhuAPn8VR37Tjz6Kpo0pv7-Fmu49g84",
+  authDomain: "cureconnect-b1870.firebaseapp.com",
+  projectId: "cureconnect-b1870",
+  storageBucket: "cureconnect-b1870.firebasestorage.app",
+  messagingSenderId: "1055909963829",
+  appId: "1:1055909963829:web:aa0f92e6898832c665e97c",
+  measurementId: "G-2NZ6CKZYWG"
 };
 
 // ✅ Initialize Firebase

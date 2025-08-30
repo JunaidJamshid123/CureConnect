@@ -28,6 +28,7 @@ const getStatusBarHeight = () => {
 };
 
 const styles = StyleSheet.create({
+  // Container Styles
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
@@ -39,6 +40,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: hp(2),
   },
+
+  // Loading and Error States
   loadingContainer: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -70,6 +73,8 @@ const styles = StyleSheet.create({
     fontSize: normalize(14),
     fontWeight: Platform.OS === 'ios' ? '600' : 'bold',
   },
+
+  // Header Styles
   headerContainer: {
     height: Platform.OS === 'ios' ? hp(40) : hp(42),
     position: 'relative',
@@ -121,6 +126,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  // Profile Completion Indicator
   completionIndicator: {
     alignItems: 'center',
     marginVertical: hp(1),
@@ -130,6 +137,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     opacity: 0.9,
     marginBottom: hp(0.5),
+    textAlign: 'center',
   },
   progressBar: {
     width: wp(60),
@@ -143,6 +151,39 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: normalize(5),
   },
+  
+  // Profile Completion Suggestions
+  completionSuggestions: {
+    alignItems: 'center',
+    marginTop: hp(1),
+    paddingHorizontal: wp(5),
+  },
+  suggestionsTitle: {
+    fontSize: normalize(11),
+    color: '#FFFFFF',
+    opacity: 0.9,
+    marginBottom: hp(0.5),
+    textAlign: 'center',
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: wp(3),
+    paddingVertical: hp(0.3),
+    borderRadius: normalize(15),
+    marginBottom: hp(0.3),
+    minWidth: wp(60),
+    justifyContent: 'space-between',
+  },
+  suggestionText: {
+    fontSize: normalize(10),
+    color: '#FFFFFF',
+    flex: 1,
+    textAlign: 'center',
+  },
+
+  // Profile Image Section
   profileImageSection: {
     alignItems: 'center',
     marginTop: hp(1),
@@ -198,11 +239,15 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginLeft: wp(1),
   },
+
+  // Content Container
   contentContainer: {
     flex: 1,
     paddingHorizontal: wp(5),
     paddingTop: hp(2),
   },
+
+  // Status Card
   statusCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: normalize(15),
@@ -253,6 +298,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F0F0',
     marginHorizontal: wp(2),
   },
+
+  // Section Styles
   sectionContainer: {
     marginBottom: hp(2.5),
   },
@@ -262,6 +309,8 @@ const styles = StyleSheet.create({
     color: '#333333',
     marginBottom: hp(1.5),
   },
+
+  // Info Card Styles
   infoCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: normalize(12),
@@ -314,6 +363,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F0F0',
     marginVertical: hp(0.5),
   },
+
+  // Availability Card Styles
   availabilityCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: normalize(12),
@@ -355,6 +406,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F0F0',
     marginVertical: hp(0.5),
   },
+
+  // Settings Card Styles
   settingsCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: normalize(12),
@@ -393,6 +446,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F0F0',
     marginVertical: hp(0.5),
   },
+
   // Modal Styles
   modalOverlay: {
     flex: 1,
@@ -468,6 +522,7 @@ const styles = StyleSheet.create({
     fontWeight: Platform.OS === 'ios' ? '600' : 'bold',
     color: '#FFFFFF',
   },
+
   // Image Picker Modal Styles
   imagePickerContainer: {
     backgroundColor: '#FFFFFF',

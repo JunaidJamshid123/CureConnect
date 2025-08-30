@@ -15,7 +15,6 @@ import {
   RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import DoctorProfileService from '../../../services/DoctorProfileService';
 import { useProfileLogic } from './profileLogic';
 import styles from './styles';
 
@@ -48,21 +47,25 @@ const ProfileScreen = ({ navigation }) => {
     imagePickerModal,
     
     // State setters
-    setEditModal,
     setImagePickerModal,
     
     // Functions
     loadDoctorProfile,
     onRefresh,
-    showError,
-    showSuccess,
     openEditModal,
     handleSaveEdit,
     toggleAvailability,
     handleProfilePictureUpdate,
+    handleRemoveProfilePicture,
     handleLogout,
-    getProfileCompletion
-  } = useProfileLogic();
+    getProfileCompletion,
+    getProfileCompletionSuggestions,
+    closeEditModal,
+    closeImagePickerModal,
+    updateEditModalValue,
+    validateProfileData,
+    handleSaveEditWithValidation
+  } = useProfileLogic(navigation);
 
   // Render loading state
   if (loading && !doctorProfile) {
@@ -134,6 +137,26 @@ const ProfileScreen = ({ navigation }) => {
                   </View>
                 </View>
                 
+                {/* Profile Completion Suggestions */}
+                {getProfileCompletion() < 100 && (
+                  <View style={styles.completionSuggestions}>
+                    <Text style={styles.suggestionsTitle}>Complete your profile:</Text>
+                    {getProfileCompletionSuggestions().slice(0, 3).map((suggestion, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={styles.suggestionItem}
+                        onPress={() => openEditModal(suggestion.field, doctorProfile[suggestion.field], `Edit ${suggestion.label}`)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.suggestionText}>
+                          • {suggestion.label}
+                        </Text>
+                        <Ionicons name="pencil" size={normalize(12)} color="#FFFFFF" />
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+                
                 {/* Profile Image Section */}
                 <View style={styles.profileImageSection}>
                   <View style={styles.profileImageContainer}>
@@ -141,7 +164,7 @@ const ProfileScreen = ({ navigation }) => {
                       source={
                         doctorProfile.profileImage 
                           ? { uri: doctorProfile.profileImage }
-                          : require('../../../assets/icons/demo_doctor.jpg')
+                          : require('../../../../assets/icons/demo_doctor.jpg')
                       }
                       style={styles.profileImage}
                       resizeMode="cover"
@@ -568,7 +591,7 @@ const ProfileScreen = ({ navigation }) => {
           visible={editModal.visible}
           transparent={true}
           animationType="slide"
-          onRequestClose={() => setEditModal({ ...editModal, visible: false })}
+          onRequestClose={closeEditModal}
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContainer}>
@@ -576,7 +599,7 @@ const ProfileScreen = ({ navigation }) => {
               <TextInput
                 style={[styles.modalInput, editModal.multiline && styles.multilineInput]}
                 value={editModal.value}
-                onChangeText={(text) => setEditModal({ ...editModal, value: text })}
+                onChangeText={updateEditModalValue}
                 placeholder="Enter value..."
                 placeholderTextColor="#999999"
                 multiline={editModal.multiline}
@@ -588,21 +611,14 @@ const ProfileScreen = ({ navigation }) => {
               <View style={styles.modalButtonContainer}>
                 <TouchableOpacity 
                   style={[styles.modalButton, styles.cancelButton]} 
-                  onPress={() => setEditModal({ 
-                    visible: false, 
-                    field: '', 
-                    value: '', 
-                    title: '', 
-                    multiline: false, 
-                    keyboardType: 'default' 
-                  })}
+                  onPress={closeEditModal}
                   disabled={updating}
                 >
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={[styles.modalButton, styles.saveButton]} 
-                  onPress={handleSaveEdit}
+                  onPress={handleSaveEditWithValidation}
                   disabled={updating}
                 >
                   {updating ? (
@@ -621,7 +637,7 @@ const ProfileScreen = ({ navigation }) => {
           visible={imagePickerModal}
           transparent={true}
           animationType="slide"
-          onRequestClose={() => setImagePickerModal(false)}
+          onRequestClose={closeImagePickerModal}
         >
           <View style={styles.modalOverlay}>
             <View style={styles.imagePickerContainer}>
@@ -648,20 +664,7 @@ const ProfileScreen = ({ navigation }) => {
               {doctorProfile.profileImage && (
                 <TouchableOpacity 
                   style={styles.imagePickerOption}
-                  onPress={async () => {
-                    try {
-                      setUpdating(true);
-                      const result = await DoctorProfileService.removeProfilePicture();
-                      if (result.success) {
-                        showSuccess(result.message);
-                        setImagePickerModal(false);
-                      }
-                    } catch (error) {
-                      showError('Failed to remove profile picture');
-                    } finally {
-                      setUpdating(false);
-                    }
-                  }}
+                  onPress={handleRemoveProfilePicture}
                   disabled={updating}
                 >
                   <Ionicons name="trash" size={normalize(24)} color="#FF6B6B" />
@@ -671,7 +674,7 @@ const ProfileScreen = ({ navigation }) => {
               
               <TouchableOpacity 
                 style={styles.imagePickerCancel}
-                onPress={() => setImagePickerModal(false)}
+                onPress={closeImagePickerModal}
                 disabled={updating}
               >
                 <Text style={styles.imagePickerCancelText}>Cancel</Text>
