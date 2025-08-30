@@ -23,6 +23,11 @@ const { width: screenWidth } = Dimensions.get('window');
 // Enhanced responsive functions for better cross-platform support
 const wp = (percentage) => (screenWidth * percentage) / 100;
 
+// Device-specific adjustments
+const isSmallDevice = screenWidth < 375;
+const isLargeDevice = screenWidth > 414;
+const isTablet = screenWidth > 768;
+
 // Improved normalize function for better scaling across devices
 const normalize = (size) => {
   const scale = screenWidth / 375; // Base width 375 (iPhone X)
@@ -96,7 +101,7 @@ const DoctorScreen = ({ navigation }) => {
     <View style={styles.emptyContainer}>
       <Ionicons 
         name="search" 
-        size={normalize(60)} 
+        size={isSmallDevice ? normalize(50) : normalize(60)} 
         color="#CCCCCC" 
         style={styles.emptyIcon}
       />
@@ -356,6 +361,19 @@ const DoctorScreen = ({ navigation }) => {
           }
           ListEmptyComponent={renderEmptyState}
           bounces={Platform.OS === 'ios'}
+          // Performance optimizations
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          initialNumToRender={5}
+          getItemLayout={(data, index) => ({
+            length: 200, // Approximate height of each doctor card
+            offset: 200 * index,
+            index,
+          })}
+          // Better scrolling experience
+          scrollEventThrottle={16}
+          decelerationRate="fast"
         />
       </SafeAreaView>
     </View>

@@ -19,6 +19,11 @@ const normalize = (size) => {
   return Math.round(newSize * 1.1);
 };
 
+// Device-specific adjustments
+const isSmallDevice = screenWidth < 375;
+const isLargeDevice = screenWidth > 414;
+const isTablet = screenWidth > 768;
+
 // Get status bar height for proper positioning
 const getStatusBarHeight = () => {
   if (Platform.OS === 'ios') {
@@ -35,6 +40,7 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+    backgroundColor: '#F8F9FA',
   },
   scrollContainer: {
     flexGrow: 1,
@@ -45,7 +51,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0BAB7D',
     paddingTop: Platform.OS === 'ios' ? getStatusBarHeight() : hp(2),
     paddingBottom: hp(2),
-    paddingHorizontal: wp(5),
+    paddingHorizontal: isSmallDevice ? wp(4) : wp(5),
     borderBottomLeftRadius: normalize(20),
     borderBottomRightRadius: normalize(20),
     ...Platform.select({
@@ -81,10 +87,10 @@ const styles = StyleSheet.create({
   // Search Section
   searchSection: {
     backgroundColor: '#FFFFFF',
-    marginHorizontal: wp(5),
+    marginHorizontal: isSmallDevice ? wp(4) : wp(5),
     marginTop: hp(-2),
     borderRadius: normalize(15),
-    padding: wp(4),
+    padding: isSmallDevice ? wp(3) : wp(4),
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -117,7 +123,7 @@ const styles = StyleSheet.create({
 
   // Filter Section
   filterSection: {
-    paddingHorizontal: wp(5),
+    paddingHorizontal: isSmallDevice ? wp(4) : wp(5),
     paddingVertical: hp(2),
   },
   filterTitle: {
@@ -159,9 +165,9 @@ const styles = StyleSheet.create({
 
   // Content Section
   contentContainer: {
-    flex: 1,
-    paddingHorizontal: wp(5),
-    paddingBottom: hp(2),
+    paddingHorizontal: isSmallDevice ? wp(4) : wp(5),
+    paddingBottom: hp(15), // Extra padding for bottom navigation
+    paddingTop: hp(1),
   },
 
   // Loading and Error States
@@ -229,7 +235,7 @@ const styles = StyleSheet.create({
   doctorCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: normalize(15),
-    marginBottom: hp(2),
+    marginBottom: isSmallDevice ? hp(1.5) : hp(2),
     overflow: 'hidden',
     ...Platform.select({
       ios: {
@@ -245,15 +251,15 @@ const styles = StyleSheet.create({
   },
   doctorCardHeader: {
     flexDirection: 'row',
-    padding: wp(4),
+    padding: isSmallDevice ? wp(3) : wp(4),
   },
   doctorImageContainer: {
     marginRight: wp(4),
   },
   doctorImage: {
-    width: wp(18),
-    height: wp(18),
-    borderRadius: wp(9),
+    width: isSmallDevice ? wp(16) : wp(18),
+    height: isSmallDevice ? wp(16) : wp(18),
+    borderRadius: isSmallDevice ? wp(8) : wp(9),
     borderWidth: 2,
     borderColor: '#E0E0E0',
   },
@@ -326,8 +332,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: wp(4),
-    paddingBottom: wp(4),
+    paddingHorizontal: isSmallDevice ? wp(3) : wp(4),
+    paddingBottom: isSmallDevice ? wp(3) : wp(4),
     borderTopWidth: 1,
     borderTopColor: '#F0F0F0',
   },
@@ -361,8 +367,8 @@ const styles = StyleSheet.create({
 
   // Doctor Details Section
   doctorDetailsSection: {
-    paddingHorizontal: wp(4),
-    paddingBottom: wp(4),
+    paddingHorizontal: isSmallDevice ? wp(3) : wp(4),
+    paddingBottom: isSmallDevice ? wp(3) : wp(4),
   },
   doctorAddress: {
     fontSize: normalize(11),
@@ -389,12 +395,34 @@ const styles = StyleSheet.create({
 
   // Results Count
   resultsCount: {
-    paddingHorizontal: wp(5),
+    paddingHorizontal: isSmallDevice ? wp(4) : wp(5),
     paddingVertical: hp(1),
   },
   resultsCountText: {
     fontSize: normalize(12),
     color: '#666666',
+  },
+
+  // Additional responsive improvements
+  filterChip: {
+    paddingHorizontal: isSmallDevice ? wp(3) : wp(4),
+    paddingVertical: isSmallDevice ? hp(0.8) : hp(1),
+    borderRadius: normalize(20),
+    marginRight: wp(2),
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+
+  // Better touch targets for small devices
+  doctorActionButton: {
+    backgroundColor: '#0BAB7D',
+    paddingHorizontal: isSmallDevice ? wp(3) : wp(4),
+    paddingVertical: isSmallDevice ? hp(1) : hp(0.8),
+    borderRadius: normalize(8),
+    marginLeft: wp(2),
+    minHeight: isSmallDevice ? normalize(36) : normalize(32),
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
